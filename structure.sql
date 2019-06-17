@@ -20,9 +20,7 @@ FOR r IN 1..9 LOOP
 		INSERT INTO topo.x (id) VALUES (r*10+c);
 	END LOOP;
 END LOOP;
-
-RETURN 0;    -- return final result
-
+RETURN 0;
 END;
 $BODY$ LANGUAGE plpgsql VOLATILE;
 
@@ -41,9 +39,7 @@ FOR r IN 1..8 LOOP
 		
 	END LOOP;
 END LOOP;
-
-RETURN 0;    -- return final result
-
+RETURN 0;
 EXCEPTION 
 	WHEN foreign_key_violation 
 	THEN RETURN 1;
@@ -69,7 +65,6 @@ create table TOPO.B (
 );
 
 -- di elementi randomici di X
-
 CREATE OR REPLACE FUNCTION fill_A()
   RETURNS INTEGER AS
 $BODY$
@@ -90,24 +85,57 @@ $BODY$ LANGUAGE plpgsql VOLATILE;
 
 
 -- punti interni
-create view intA(id) as
-select A.id from topo.A
-where not exists
-(select poR.ida from poR
-where poR.idb = A.id
-and poR.ida not in (select id from topo.A));
+CREATE OR REPLACE FUNCTION topo_int()
+	RETURNS TABLE (id Integer) AS
+$BODY$
+BEGIN
+RETURN QUERY 
+	select A.id from topo.A
+	where not exists
+	(select poR.ida from poR
+	where poR.idb = A.id
+	and poR.ida not in (select A1.id from topo.A as A1));
+END; $BODY$
+LANGUAGE 'plpgsql' VOLATILE;
 
-create view clA(id) as
-select distinct X.id from topo.X, poR, topo.A
-where X.id = poR.idb and poR.ida = A.id;
+-- closure
+CREATE OR REPLACE FUNCTION topo_cl()
+	RETURNS TABLE (id Integer) AS
+$BODY$
+BEGIN
+RETURN QUERY 
+	select distinct X.id from topo.X, poR, topo.A
+	where X.id = poR.idb and poR.ida = A.id;
+END; $BODY$
+LANGUAGE 'plpgsql' VOLATILE;
 
-create view bdA(id) as
-select clA.id from clA
-where clA.id not in (select id from intA);
 
-create view extA(id) as
-select id from topo.X
-where id not in (select id from clA);
+CREATE OR REPLACE FUNCTION topo_bd()
+	RETURNS TABLE (id Integer) AS
+$BODY$
+BEGIN
+	DROP TABLE IF EXISTS closure;
+	DROP TABLE IF EXISTS interior;
+	CREATE TEMP TABLE closure  ON COMMIT DELETE ROWS AS (select topo_cl() );
+	CREATE TEMP TABLE interior ON COMMIT DELETE ROWS AS (select topo_int());
+	RETURN QUERY 
+	select C.id from closure AS C
+	where C.id not in (select I.id from interior AS I);
+END; $BODY$
+LANGUAGE 'plpgsql' VOLATILE;
+
+
+CREATE OR REPLACE FUNCTION topo_ext()
+	RETURNS TABLE (id Integer) AS
+$BODY$
+BEGIN
+	CREATE TEMP TABLE closure (c_id integer);
+	insert into closure (c_id) (select topo_cl());
+	RETURN QUERY 
+	select T.id from topo.X as T
+	where T.id not in (select C_id from closure);
+END; $BODY$
+LANGUAGE 'plpgsql' VOLATILE;
 
 
 insert into topo.A (id) VALUES (55);
