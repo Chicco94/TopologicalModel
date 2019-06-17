@@ -116,11 +116,15 @@ $BODY$
 BEGIN
 	DROP TABLE IF EXISTS closure;
 	DROP TABLE IF EXISTS interior;
-	CREATE TEMP TABLE closure  ON COMMIT DELETE ROWS AS (select topo_cl() );
-	CREATE TEMP TABLE interior ON COMMIT DELETE ROWS AS (select topo_int());
+	CREATE TEMP TABLE closure (c_id integer);
+	insert into closure (c_id) (select topo_cl());
+
+	CREATE TEMP TABLE interior (i_id integer);
+	insert into interior (i_id) (select topo_int());
+
 	RETURN QUERY 
-	select C.id from closure AS C
-	where C.id not in (select I.id from interior AS I);
+	select c_id from closure AS C
+	where c_id not in (select i_id from interior AS I);
 END; $BODY$
 LANGUAGE 'plpgsql' VOLATILE;
 
