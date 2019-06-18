@@ -155,9 +155,9 @@ BEGIN
 	DROP TABLE IF EXISTS closure;
 	DROP TABLE IF EXISTS interior;
 	CREATE TEMP TABLE closure (c_id integer);
-	insert into closure (c_id) (select * from topo_cl(_topo_set regclass,_topo_rel regclass, _my_set regclass));
+	insert into closure (c_id) (select * from topo_cl(_topo_set,_topo_rel, _my_set));
 	CREATE TEMP TABLE interior (i_id integer);
-	insert into interior (i_id) (select * from topo_int(_topo_set regclass,_topo_rel regclass, _my_set regclass));
+	insert into interior (i_id) (select * from topo_int(_topo_set,_topo_rel, _my_set));
 
 	RETURN QUERY 
 	select c_id from closure AS C
@@ -173,13 +173,13 @@ LANGUAGE 'plpgsql' VOLATILE;
 
  @return table punti esterni dell'insieme dato rispetto alla topologia data
 */
-CREATE OR REPLACE FUNCTION topo_bd(_topo_set regclass,_topo_rel regclass, _my_set regclass)
+CREATE OR REPLACE FUNCTION topo_ext(_topo_set regclass,_topo_rel regclass, _my_set regclass)
 	RETURNS TABLE (id Integer) AS
 $BODY$
 BEGIN
 	DROP TABLE IF EXISTS closure;
 	CREATE TEMP TABLE closure (c_id integer);
-	insert into closure (c_id) (select topo_cl(_topo_set regclass,_topo_rel regclass, _my_set regclass));
+	insert into closure (c_id) (select topo_cl(_topo_set,_topo_rel, _my_set));
 	RETURN QUERY 
 	select T.id from topo.X as T
 	where T.id not in (select C_id from closure);
