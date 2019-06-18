@@ -1,26 +1,29 @@
 CREATE DATABASE myTOPO;
 
-CREATE TABLE TOPO.X (
-	id INTEGER PRIMARY KEY
-);
+CREATE TYPE topo_set AS (id integer);
+CREATE TABLE topo.X OF topo_set (PRIMARY KEY(id));
 
+CREATE TYPE topo_rel AS (ida integer, idb integer);
+CREATE TABLE R OF topo_rel (PRIMARY KEY(ida,idb));
+
+/* mancano chiavi esterne
 CREATE TABLE TOPO.R (
 	ida INTEGER REFERENCES TOPO.X (id),
 	idb INTEGER REFERENCES TOPO.X (id),
 	PRIMARY KEY (ida, idb)
-);
+);*/
 
 
-CREATE OR REPLACE FUNCTION fill_X()
+CREATE OR REPLACE FUNCTION fill(size int, _table regclass)
   RETURNS INTEGER AS
 $BODY$
 BEGIN
-FOR r IN 1..9 LOOP
-	FOR c IN 1..9 LOOP
-		INSERT INTO topo.x (id) VALUES (r*10+c);
+FOR r IN 1..size LOOP
+	FOR c IN 1..size LOOP
+		EXECUTE format('INSERT INTO %s (id) VALUES (%s*10+%s)', _table,r,c);
 	END LOOP;
 END LOOP;
-RETURN 0;
+RETURN size*size;
 END;
 $BODY$ LANGUAGE plpgsql VOLATILE;
 
@@ -118,7 +121,6 @@ BEGIN
 	DROP TABLE IF EXISTS interior;
 	CREATE TEMP TABLE closure (c_id integer);
 	insert into closure (c_id) (select topo_cl());
-
 	CREATE TEMP TABLE interior (i_id integer);
 	insert into interior (i_id) (select topo_int());
 
@@ -133,6 +135,7 @@ CREATE OR REPLACE FUNCTION topo_ext()
 	RETURNS TABLE (id Integer) AS
 $BODY$
 BEGIN
+	DROP TABLE IF EXISTS closure;
 	CREATE TEMP TABLE closure (c_id integer);
 	insert into closure (c_id) (select topo_cl());
 	RETURN QUERY 
