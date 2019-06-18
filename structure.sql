@@ -180,9 +180,10 @@ BEGIN
 	DROP TABLE IF EXISTS closure;
 	CREATE TEMP TABLE closure (c_id integer);
 	insert into closure (c_id) (select topo_cl(_topo_set,_topo_rel, _my_set));
-	RETURN QUERY 
-	select T.id from topo.X as T
-	where T.id not in (select C_id from closure);
+	RETURN QUERY EXECUTE format('
+	select X.id from %s as X
+	where X.id not in (select * from closure)
+	', _topo_set);
 END; $BODY$
 LANGUAGE 'plpgsql' VOLATILE;
 
