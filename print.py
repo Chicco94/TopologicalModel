@@ -1,10 +1,10 @@
 insieme = '''55 56 65 45 54 46 64 44 66'''
 
-interior = ''''''
+interior = '''66'''
 
-closure = '''74 54 68 34 52 67 63 35 45 84 86 36 66 65 62 75 73 44 42 46 43 53 48 26 85 57 24 77 25 47 37 33 76 64 55 56 58'''
+closure =  '''74 54 68 67 45 84 86 66 65 75 44 46 48 85 57 77 47 76 64 55 56 58'''
 
-boundary = '''74 54 68 34 52 67 63 35 45 84 86 36 66 65 62 75 73 44 42 46 43 53 48 26 85 57 24 77 25 47 37 33 76 64 55 56 58'''
+boundary = '''74 54 68 67 45 84 86 65 75 44 46 48 85 57 77 47 76 64 55 56 58'''
 
 exterior = '''11 12 13 14 15 16 17 18 19 21 22 23 24 25 26 27 28 29 31 32 33 34 35 36 37 38 39 41 42 43 49 51 52 53 59 61 62 63 69 71 72 73 78 79 81 82 83 87 88 89 91 92 93 94 95 96 97 98 99'''
 
@@ -17,12 +17,17 @@ def print_cell(value):
 	if value: return "|"+str(value)
 	return "| "
 
-def print_schema(schema=[], size=9, res=""):
-	res += "+-"*size + "+\n"
+def print_schema(schema=[], size=9, res=" "):
+	for i in range(size):
+		res+="|"+str(i+1)
+	res += "|\n-"+"+-"*size + "+\n"
+	row_index = 1
 	for row in schema:
+		res+= str(row_index)
+		row_index +=1
 		for cell in row:
 			res += print_cell(cell)
-		res += "|\n"+"+-"*size + "+\n"
+		res += "|\n-"+"+-"*size + "+\n"
 	print(res)
 
 
@@ -46,10 +51,10 @@ print("set")
 print_schema(schema)
 
 # interior
-# schema = create_schema()
-# schema = fill_schema(schema, cells = interior.split(" "), symbol="I")
-# print("interior")
-# print_schema(schema)
+schema = create_schema()
+schema = fill_schema(schema, cells = interior.split(" "), symbol="I")
+print("interior")
+print_schema(schema)
 
 # closure
 schema = create_schema()

@@ -1,18 +1,15 @@
 CREATE SCHEMA TOPO;
-CREATE DATABASE TOPO;
 
+-- creo il tipo "set di una topologia", potrebbe essere necessario in futuro
 CREATE TYPE topo_set AS (id integer);
 CREATE TABLE topo.X OF topo_set (PRIMARY KEY(id));
 
-CREATE TYPE topo_rel AS (ida integer, idb integer);
-CREATE TABLE R OF topo_rel (PRIMARY KEY(ida,idb));
-
-/* mancano chiavi esterne
-CREATE TABLE TOPO.R (
-	ida INTEGER REFERENCES TOPO.X (id),
-	idb INTEGER REFERENCES TOPO.X (id),
-	PRIMARY KEY (ida, idb)
-);*/
+-- creo il tipo "relazione di una topologia", potrebbe essere necessario in futuro
+CREATE TYPE  topo_rel AS (ida integer, idb integer);
+CREATE TABLE topo.R OF topo_rel (PRIMARY KEY(ida,idb));
+-- se l'elemento viene eliminato dal insieme di costruzione deve scomparire dalla topologia
+ALTER  TABLE topo.R ADD FOREIGN KEY (ida) REFERENCES topo.X (id);
+ALTER  TABLE topo.R ADD FOREIGN KEY (idb) REFERENCES topo.X (id);
 
 
 CREATE OR REPLACE FUNCTION fill_set(size int, _table regclass)
@@ -147,6 +144,8 @@ LANGUAGE 'plpgsql' VOLATILE;
  @param _my_set insieme di cui sto chiedendo il contorno
 
  @return table contorno dell'insieme dato rispetto alla topologia data
+
+ funziona correttamente solo se funzionano correttamente interior e closure
 */
 CREATE OR REPLACE FUNCTION topo_bd(_topo_set regclass,_topo_rel regclass, _my_set regclass)
 	RETURNS TABLE (id Integer) AS
@@ -172,6 +171,8 @@ LANGUAGE 'plpgsql' VOLATILE;
  @param _my_set insieme di cui sto chiedendo i punti esterni
 
  @return table punti esterni dell'insieme dato rispetto alla topologia data
+
+ ritorna tutto ciò che è esterno alla closure
 */
 CREATE OR REPLACE FUNCTION topo_ext(_topo_set regclass,_topo_rel regclass, _my_set regclass)
 	RETURNS TABLE (id Integer) AS
