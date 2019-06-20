@@ -26,20 +26,74 @@ END;
 $BODY$ LANGUAGE plpgsql VOLATILE;
 
 
-
+-- Tuple R(11, 12) denotes e.g. that 12 ∈ bd{11}
 CREATE OR REPLACE FUNCTION fill_rel(size int, _table regclass)
 	RETURNS INTEGER AS
 $BODY$
 BEGIN
-FOR r IN 1..(size-1) LOOP
-	FOR c IN 1..(size-1) LOOP
-		-- inserisco la relazione con l'elemento sopra se esiste
-		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,r*10+c,(r+1)*10+c);
-		-- inserisco la relazione con l'elemento a destra se esiste
-		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,r*10+c,r*10+(c+1));
+-- angoli
+EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,11,12);
+EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,11,21);
+EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,19,18);
+EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,19,28);
+EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,91,92);
+EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,91,81);
+EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,99,89);
+EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,99,98);
+
+-- ciclo sui 4 bordi contemporaneamente
+FOR i IN 2..(size-1) LOOP
+	IF (i % 2 = 1) THEN -- sono in una faccia
+		-- celle colonna a sinistra
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,10+i,10+i+1); -- bordo sopra
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,10+i,10+i-1); -- bordo sotto
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,10+i,20+i  ); -- bordo a destra
+
+		-- celle colonna a destra
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,90+i,90+i+1); -- bordo sopra
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,90+i,90+i-1); -- bordo sotto
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,90+i,80+i  ); -- bordo a sinistra
+
+		-- celle riga sotto
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+1,(10*i)+2); -- bordo sopra
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+1,(10*(i-1))+1); -- bordo a sinistra
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+1,(10*(i+1))+1); -- bordo a destra
+
+		-- celle riga sopra
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+9,(10*i)+8); -- bordo sotto
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+9,(10*(i-1))+9); -- bordo a sinistra
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+9,(10*(i+1))+9); -- bordo a destra
+	ELSE -- sono in un lato
+		-- lato a sinistra
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,10+i,20+i  ); -- bordo a destra
+		-- lato a destra
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,90+i,80+i  ); -- bordo a sinistra
+		-- lato sotto
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+1,(10*i)+2); -- bordo sopra
+		-- lato sopra
+		EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+9,(10*i)+8); -- bordo sotto
+	END IF;
+END LOOP;
+
+-- ciclo sulle celle interne
+FOR i IN 2..(size-1) LOOP
+	FOR j IN 2..(size-1) LOOP
+		IF (i % 2 = 1 and j % 2 = 1) THEN -- sono in una faccia
+			EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+j,(10*i)+j+1);  -- bordo sopra
+			EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+j,(10*i)+j-1);  -- bordo sotto
+			EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+j,(10*(i+1))+j);  -- bordo a sinistra
+			EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+j,(10*(i-1))+j);  -- bordo a destra
+		ELSIF (i % 2 = 1 and  j % 2 = 0) THEN -- sono in un lato orrizzontale
+			EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+j,(10*(i+1))+j); -- bordo a destra
+			EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+j,(10*(i-1))+j); -- bordo a sinistra
+		ELSIF (i % 2 = 0 and  j % 2 = 1) THEN -- sono in un lato verticale
+			EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+j,(10*i)+j+1); -- bordo a sopra
+			EXECUTE format('INSERT INTO %s (ida,idb) VALUES (%s, %s)',_table,(10*i)+j,(10*i)+j-1); -- bordo a sotto
+		END IF;
+		-- se non si verifica nessuna delle precedenti condizioni sono su un putno
 	END LOOP;
 END LOOP;
-RETURN 2*(size-1)*(size-1);
+RETURN 0;
 EXCEPTION 
 	WHEN foreign_key_violation 
 	THEN RETURN -1;
@@ -47,12 +101,13 @@ END;
 $BODY$ LANGUAGE plpgsql VOLATILE;
 
 
-
 /**
  @param _topo_set insieme di valori su cui si appoggia la topologia
  @param _topo_rel relazione sull'insieme sopra citato
 
  @return table chiusura riflessiva e transitiva della relazione sull'insieme dato
+
+ @usage insert into topo.por (select ida,idb  from create_topology('topo.x','topo.r'));
 */
 CREATE OR REPLACE FUNCTION create_topology(_topo_set regclass,_topo_rel regclass)
 	RETURNS TABLE (ida Integer,idb Integer) AS
