@@ -12,6 +12,7 @@ ALTER  TABLE topo.R ADD FOREIGN KEY (ida) REFERENCES topo.X (id);
 ALTER  TABLE topo.R ADD FOREIGN KEY (idb) REFERENCES topo.X (id);
 
 
+
 CREATE OR REPLACE FUNCTION fill_set(size int, _table regclass)
 	RETURNS INTEGER AS
 $BODY$
@@ -24,6 +25,7 @@ END LOOP;
 RETURN size*size;
 END;
 $BODY$ LANGUAGE plpgsql VOLATILE;
+
 
 
 -- Tuple R(11, 12) denotes e.g. that 12 ∈ bd{11}
@@ -99,6 +101,7 @@ EXCEPTION
 	THEN RETURN -1;
 END;
 $BODY$ LANGUAGE plpgsql VOLATILE;
+
 
 
 /**
@@ -184,6 +187,7 @@ $BODY$ LANGUAGE plpgsql VOLATILE;
 */
 
 
+
 /**
  @param _topo_set insieme di valori su cui si appoggia la topologia
  @param _topo_rel relazione sull'insieme sopra citato
@@ -206,6 +210,7 @@ END; $BODY$
 LANGUAGE 'plpgsql' VOLATILE;
 
 
+
 /**
  @param _topo_set insieme di valori su cui si appoggia la topologia
  @param _topo_rel relazione sull'insieme sopra citato
@@ -223,6 +228,7 @@ RETURN QUERY EXECUTE format('
 	',_topo_set, _topo_rel, _my_set);
 END; $BODY$
 LANGUAGE 'plpgsql' VOLATILE;
+
 
 
 /**
@@ -252,6 +258,7 @@ END; $BODY$
 LANGUAGE 'plpgsql' VOLATILE;
 
 
+
 /**
  @param _topo_set insieme di valori su cui si appoggia la topologia
  @param _topo_rel relazione sull'insieme sopra citato
@@ -276,3 +283,70 @@ END; $BODY$
 LANGUAGE 'plpgsql' VOLATILE;
 
 
+
+/**
+ @param _topo_set insieme di valori su cui si appoggia la topologia
+ @param _topo_rel relazione sull'insieme sopra citato
+ @param _setA insieme di cui sto chiedendo la matrice di intersezione
+ @param _setB insieme di cui sto chiedendo la matrice di intersezione
+
+ @return table la matrice di intersezione degli insieme dati rispetto alla topologia data
+
+ ritorna tutto ciò che è esterno alla closure
+*/
+CREATE OR REPLACE FUNCTION topo_ext(_topo_set regclass,_topo_rel regclass, _setA regclass, _setB regclass)
+	RETURNS TABLE (id Integer) AS
+$BODY$
+BEGIN
+	DROP TABLE IF EXISTS closure;
+	CREATE TEMP TABLE closure (c_id integer);
+	insert into closure (c_id) (select topo_cl(_topo_set,_topo_rel, _my_set));
+	RETURN QUERY EXECUTE format('
+	select X.id from %s as X
+	where X.id not in (select * from closure)
+	', _topo_set);
+END; $BODY$
+LANGUAGE 'plpgsql' VOLATILE;
+
+select
+exists(select * from topo.intA as ia, topo.intB as ib where ia.id=ib.id)
+as iaib,
+exists(select * from topo.bdA  as da, topo.intB as ib where da.id=ib.id)
+as daib,
+exists(select * from topo.extA as xa, topo.intB as ib where xa.id=ib.id)
+as xaib,
+exists(select * from topo.intA as ia, topo.bdB  as db where ia.id=db.id)
+as iadb,
+exists(select * from topo.bdA  as da, topo.bdB  as db where da.id=db.id)
+as dadb,
+exists(select * from topo.extA as xa, topo.bdB  as db where xa.id=db.id)
+as xadb,
+exists(select * from topo.intA as ia, topo.extB as xb where ia.id=xb.id)
+as iaxb,
+exists(select * from topo.bdA  as da, topo.extB as xb where da.id=xb.id)
+as daxb,
+exists(select * from topo.extA as xa, topo.extB as xb where xa.id=xb.id)
+as xaxb;
+
+
+
+
+-- svuota e riempi
+insert into topo.intb 	(select topo_int('topo.x','topo.por','topo.b'));
+insert into topo.bdb 	(select topo_bd('topo.x','topo.por','topo.b'));
+insert into topo.clb 	(select topo_cl('topo.x','topo.por','topo.b'));
+insert into topo.extb 	(select topo_ext('topo.x','topo.por','topo.b'));
+
+insert into topo.inta 	(select topo_int('topo.x','topo.por','topo.a'));
+insert into topo.bda 	(select topo_bd('topo.x','topo.por','topo.a'));
+insert into topo.cla 	(select topo_cl('topo.x','topo.por','topo.a'));
+insert into topo.exta 	(select topo_ext('topo.x','topo.por','topo.a'));
+
+truncate table topo.intb cascade;
+truncate table topo.bdb  cascade;
+truncate table topo.clb  cascade;
+truncate table topo.extb cascade;
+truncate table topo.inta cascade;
+truncate table topo.bda  cascade;
+truncate table topo.cla  cascade;
+truncate table topo.exta cascade;

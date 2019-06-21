@@ -32,6 +32,17 @@ def fill_schema(schema=None ,cells=[],size=9, symbol=" "):
 	return schema
 
 
+def print_Egenhofer(matrix):
+	if len(matrix) != 9:
+		print("matrice non riconosciuta\n")
+		return False
+	res_str = "intersection matrix:\n"
+	for i in range(3):
+		res_str += str(matrix[3*i+0]) + " " + str(matrix[3*i+1]) + " " + str(matrix[3*i+2]) + "\n"
+	print(res_str)
+	return True
+
+
 def print_analisys(insieme, interior,closure,boundary,exterior, _symbol="X"):
 	# set
 	schema = create_schema()
@@ -80,3 +91,6 @@ exterior = '''11 12 13 14 15 16 17 18 19 21 22 23 29 31 32 33 39 41 42 43 49 51 
 
 
 print_analisys(insieme, interior,closure,boundary,exterior, _symbol="B")
+
+egenhofer = ' f    | f    | t    | f    | t    | t    | t    | t    | t'.replace(" ","").replace("|","")
+print_Egenhofer(egenhofer)
