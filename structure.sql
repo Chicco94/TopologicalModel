@@ -139,6 +139,38 @@ insert into topo.A (id) VALUES (64);
 insert into topo.A (id) VALUES (44);
 insert into topo.A (id) VALUES (66);
 
+-- presi un insieme
+create table TOPO.B (
+	id integer PRIMARY KEY REFERENCES TOPO.X (id)
+);
+
+-- celle interne
+insert into topo.B (id) VALUES (47);
+insert into topo.B (id) VALUES (37);
+insert into topo.B (id) VALUES (36);
+insert into topo.B (id) VALUES (35);
+insert into topo.B (id) VALUES (57);
+
+-- sotto e sinistra
+insert into topo.B (id) VALUES (34);
+insert into topo.B (id) VALUES (44);
+insert into topo.B (id) VALUES (45);
+insert into topo.B (id) VALUES (46);
+insert into topo.B (id) VALUES (56);
+insert into topo.B (id) VALUES (66);
+insert into topo.B (id) VALUES (67);
+-- sopra
+insert into topo.B (id) VALUES (68);
+insert into topo.B (id) VALUES (58);
+insert into topo.B (id) VALUES (48);
+insert into topo.B (id) VALUES (38); 
+-- lato sinistro
+insert into topo.B (id) VALUES (28);
+insert into topo.B (id) VALUES (27);
+insert into topo.B (id) VALUES (26);
+insert into topo.B (id) VALUES (25);
+insert into topo.B (id) VALUES (24);
+
 -- di elementi randomici di X
 /*
 CREATE OR REPLACE FUNCTION fill_A()
