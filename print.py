@@ -92,5 +92,5 @@ exterior = '''11 12 13 14 15 16 17 18 19 21 22 23 29 31 32 33 39 41 42 43 49 51 
 
 print_analisys(insieme, interior,closure,boundary,exterior, _symbol="B")
 
-egenhofer = ' f    | f    | t    | f    | t    | t    | t    | t    | t'.replace(" ","").replace("|","")
+egenhofer = 'f,f,t,f,t,t,t,t,t'.replace(",","")
 print_Egenhofer(egenhofer)

@@ -295,9 +295,9 @@ LANGUAGE 'plpgsql' VOLATILE;
  ritorna tutto ciò che è esterno alla closure
 */
 CREATE OR REPLACE FUNCTION egenhofer(_topo_set regclass,_topo_rel regclass, _setA regclass, _setB regclass)
-	RETURNS TABLE (	id Boolean,id Boolean,id Boolean,
-					id Boolean,id Boolean,id Boolean,
-					id Boolean,id Boolean,id Boolean) AS
+	RETURNS TABLE (	id1 Boolean,id2 Boolean,id3 Boolean,
+					id4 Boolean,id5 Boolean,id6 Boolean,
+					id7 Boolean,id8 Boolean,id9 Boolean) AS
 $BODY$
 BEGIN
 	DROP TABLE IF EXISTS interiorA;
