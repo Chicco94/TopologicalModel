@@ -127,7 +127,7 @@ $BODY$ LANGUAGE plpgsql VOLATILE;
 
 
 
--- presi un insieme
+-- preso un insieme A
 create table TOPO.A (
 	id integer PRIMARY KEY REFERENCES TOPO.X (id)
 );
@@ -142,7 +142,7 @@ insert into topo.A (id) VALUES (64);
 insert into topo.A (id) VALUES (44);
 insert into topo.A (id) VALUES (66);
 
--- presi un insieme
+-- ed un insieme B
 create table TOPO.B (
 	id integer PRIMARY KEY REFERENCES TOPO.X (id)
 );
@@ -294,41 +294,46 @@ LANGUAGE 'plpgsql' VOLATILE;
 
  ritorna tutto ciò che è esterno alla closure
 */
-CREATE OR REPLACE FUNCTION topo_ext(_topo_set regclass,_topo_rel regclass, _setA regclass, _setB regclass)
-	RETURNS TABLE (id Integer) AS
+CREATE OR REPLACE FUNCTION egenhofer(_topo_set regclass,_topo_rel regclass, _setA regclass, _setB regclass)
+	RETURNS TABLE (	id Boolean,id Boolean,id Boolean,
+					id Boolean,id Boolean,id Boolean,
+					id Boolean,id Boolean,id Boolean) AS
 $BODY$
 BEGIN
-	DROP TABLE IF EXISTS closure;
-	CREATE TEMP TABLE closure (c_id integer);
-	insert into closure (c_id) (select topo_cl(_topo_set,_topo_rel, _my_set));
-	RETURN QUERY EXECUTE format('
-	select X.id from %s as X
-	where X.id not in (select * from closure)
-	', _topo_set);
+	DROP TABLE IF EXISTS interiorA;
+	CREATE TEMP TABLE interiorA (id integer);
+	insert into interiorA (id) (select topo_int(_topo_set,_topo_rel, _setA));
+	DROP TABLE IF EXISTS boundaryA;
+	CREATE TEMP TABLE boundaryA (id integer);
+	insert into boundaryA (id) (select topo_bd(_topo_set,_topo_rel, _setA));
+	DROP TABLE IF EXISTS exteriorA;
+	CREATE TEMP TABLE exteriorA (id integer);
+	insert into exteriorA (id) (select topo_ext(_topo_set,_topo_rel, _setA));
+	
+	DROP TABLE IF EXISTS interiorB;
+	CREATE TEMP TABLE interiorB (id integer);
+	insert into interiorB (id) (select topo_int(_topo_set,_topo_rel, _setB));
+	DROP TABLE IF EXISTS boundaryB;
+	CREATE TEMP TABLE boundaryB (id integer);
+	insert into boundaryB (id) (select topo_bd(_topo_set,_topo_rel, _setB));
+	DROP TABLE IF EXISTS exteriorB;
+	CREATE TEMP TABLE exteriorB (id integer);
+	insert into exteriorB (id) (select topo_ext(_topo_set,_topo_rel, _setB));
+
+	RETURN QUERY EXECUTE '
+	select
+		exists(select * from interiorA as ia, interiorB as ib where ia.id=ib.id) as iaib,
+		exists(select * from boundaryA as da, interiorB as ib where da.id=ib.id) as daib,
+		exists(select * from exteriorA as xa, interiorB as ib where xa.id=ib.id) as xaib,
+		exists(select * from interiorA as ia, boundaryB as db where ia.id=db.id) as iadb,
+		exists(select * from boundaryA as da, boundaryB as db where da.id=db.id) as dadb,
+		exists(select * from exteriorA as xa, boundaryB as db where xa.id=db.id) as xadb,
+		exists(select * from interiorA as ia, exteriorB as xb where ia.id=xb.id) as iaxb,
+		exists(select * from boundaryA as da, exteriorB as xb where da.id=xb.id) as daxb,
+		exists(select * from exteriorA as xa, exteriorB as xb where xa.id=xb.id) as xaxb
+	';
 END; $BODY$
 LANGUAGE 'plpgsql' VOLATILE;
-
-select
-exists(select * from topo.intA as ia, topo.intB as ib where ia.id=ib.id)
-as iaib,
-exists(select * from topo.bdA  as da, topo.intB as ib where da.id=ib.id)
-as daib,
-exists(select * from topo.extA as xa, topo.intB as ib where xa.id=ib.id)
-as xaib,
-exists(select * from topo.intA as ia, topo.bdB  as db where ia.id=db.id)
-as iadb,
-exists(select * from topo.bdA  as da, topo.bdB  as db where da.id=db.id)
-as dadb,
-exists(select * from topo.extA as xa, topo.bdB  as db where xa.id=db.id)
-as xadb,
-exists(select * from topo.intA as ia, topo.extB as xb where ia.id=xb.id)
-as iaxb,
-exists(select * from topo.bdA  as da, topo.extB as xb where da.id=xb.id)
-as daxb,
-exists(select * from topo.extA as xa, topo.extB as xb where xa.id=xb.id)
-as xaxb;
-
-
 
 
 -- svuota e riempi
